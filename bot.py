@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
@@ -23,4 +24,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    asyncio.set_event_loop(asyncio.new_event_loop())
     main()
