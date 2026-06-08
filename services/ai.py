@@ -1,5 +1,6 @@
 import logging
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from config import GEMINI_API_KEY, GEMINI_MODEL, MAX_HISTORY_MESSAGES
 from data.knowledge_base import get_knowledge_base
 
@@ -20,12 +21,7 @@ SYSTEM_PROMPT = f"""Ты — вежливый и полезный AI-ассис�
 {get_knowledge_base()}
 """
 
-genai.configure(api_key=GEMINI_API_KEY)
-_model = genai.GenerativeModel(
-    model_name=GEMINI_MODEL,
-    system_instruction=SYSTEM_PROMPT,
-)
-
+_client = genai.Client(api_key=GEMINI_API_KEY)
 _histories: dict[int, list] = {}
 
 
@@ -36,11 +32,15 @@ def get_ai_response(chat_id: int, user_message: str) -> str:
     history = _histories[chat_id]
 
     try:
-        chat_session = _model.start_chat(history=history)
+        chat_session = _client.chats.create(
+            model=GEMINI_MODEL,
+            history=history,
+            config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+        )
         response = chat_session.send_message(user_message)
         assistant_message = response.text
 
-        updated = list(chat_session.history)
+        updated = chat_session.get_history()
         if len(updated) > MAX_HISTORY_MESSAGES * 2:
             updated = updated[-(MAX_HISTORY_MESSAGES * 2):]
         _histories[chat_id] = updated
